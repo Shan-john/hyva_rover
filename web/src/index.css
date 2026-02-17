@@ -42,13 +42,16 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
   touch-action: none;
@@ -158,8 +161,17 @@ body {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 /* ============================================
@@ -200,8 +212,13 @@ body {
   color: var(--text-secondary);
 }
 
-.motor-card.motor-a .motor-label { color: var(--motor-a-color); }
-.motor-card.motor-b .motor-label { color: var(--motor-b-color); }
+.motor-card.motor-a .motor-label {
+  color: var(--motor-a-color);
+}
+
+.motor-card.motor-b .motor-label {
+  color: var(--motor-b-color);
+}
 
 .motor-direction-badge {
   font-size: 0.6rem;
@@ -313,8 +330,54 @@ body {
 }
 
 /* ============================================
-   Emergency Stop Button
+   Action Buttons
    ============================================ */
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.action-btn {
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-blue);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.action-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.action-btn.wiggle {
+  color: var(--accent-purple);
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.action-btn.wiggle:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: var(--accent-purple);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+
 .emergency-stop {
   display: flex;
   justify-content: center;
