@@ -59,6 +59,7 @@ export default function App() {
     }, [])
 
     const handleEmergencyStop = useCallback(() => {
+        if (navigator.vibrate) navigator.vibrate(200)
         socket.emit('emergency_stop')
         setMotorA({ direction: 'stop', speed: 0 })
         setMotorB({ direction: 'stop', speed: 0 })
