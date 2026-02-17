@@ -101,30 +101,30 @@ export default function App() {
                 <div className="actions-grid">
                     <button
                         className="action-btn"
-                        onMouseDown={() => socket.emit('start_action', { type: 'spin_left' })}
+                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
                         onMouseUp={() => socket.emit('stop_action')}
                         onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'spin_left' }) }}
+                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
                         onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
                     >
                         🔄 Spin L
                     </button>
                     <button
                         className="action-btn wiggle"
-                        onMouseDown={() => socket.emit('start_action', { type: 'wiggle' })}
+                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
                         onMouseUp={() => socket.emit('stop_action')}
                         onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'wiggle' }) }}
+                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
                         onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
                     >
                         💃 Wiggle
                     </button>
                     <button
                         className="action-btn"
-                        onMouseDown={() => socket.emit('start_action', { type: 'spin_right' })}
+                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
                         onMouseUp={() => socket.emit('stop_action')}
                         onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'spin_right' }) }}
+                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
                         onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
                     >
                         🔄 Spin R

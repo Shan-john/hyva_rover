@@ -176,14 +176,14 @@ def run_continuous_action(action_name):
             elif action_name == "wiggle":
                 # Wiggle pattern
                 apply_joystick(-100, 0)
-                emit("motor_status", motor_state)
+                socketio.emit("motor_status", motor_state)
                 if stop_action_event.wait(0.15): break
                 apply_joystick(100, 0)
-                emit("motor_status", motor_state)
+                socketio.emit("motor_status", motor_state)
                 if stop_action_event.wait(0.15): break
                 continue # Skip the default emit below for wiggle
 
-            emit("motor_status", motor_state)
+            socketio.emit("motor_status", motor_state)
             
             # Small sleep to prevent CPU hogging, check stop event frequently
             if stop_action_event.wait(0.1): 
@@ -195,7 +195,7 @@ def run_continuous_action(action_name):
 
     # Stop at end
     apply_joystick(0, 0)
-    emit("motor_status", motor_state)
+    socketio.emit("motor_status", motor_state)
     print("🎬 Action stopped")
 
 
