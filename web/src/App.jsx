@@ -132,12 +132,18 @@ export default function App() {
                 </div>
 
                 {/* One-Shot Actions */}
-                <div className="actions-grid single-shot">
+                <div className="actions-grid single-shot half-split">
+                    <button
+                        className="action-btn half-spin"
+                        onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_180' }) }}
+                    >
+                        💫 180° Spin
+                    </button>
                     <button
                         className="action-btn full-spin"
                         onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_360' }) }}
                     >
-                        🌪️ 360° Spin (2.5s)
+                        🌪️ 360° Spin
                     </button>
                 </div>
 

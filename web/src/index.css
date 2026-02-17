@@ -388,12 +388,18 @@ body {
   margin-top: 8px;
 }
 
+.actions-grid.single-shot.half-split {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .action-btn.full-spin {
   color: var(--accent-orange);
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.2);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
 }
 
 .action-btn.full-spin:hover {
@@ -405,6 +411,26 @@ body {
 .action-btn.full-spin:active {
   background: rgba(245, 158, 11, 0.25);
   border-color: var(--accent-orange);
+}
+
+.action-btn.half-spin {
+  color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.2);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+}
+
+.action-btn.half-spin:hover {
+  background: rgba(34, 211, 238, 0.2);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 4px 12px rgba(34, 211, 238, 0.15);
+}
+
+.action-btn.half-spin:active {
+  background: rgba(34, 211, 238, 0.25);
+  border-color: var(--accent-cyan);
 }
 
 
