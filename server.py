@@ -159,8 +159,7 @@ def handle_joystick(data):
     """Receive joystick data: {x: -100..100, y: -100..100}"""
     x = data.get("x", 0)
     y = data.get("y", 0)
-    # Negate Y so joystick-up = car-forward
-    state = apply_joystick(x, -y)
+    state = apply_joystick(x, y)
     emit("motor_status", state)
 
 
