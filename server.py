@@ -184,8 +184,18 @@ def run_continuous_action(action_name):
                 continue # Skip the default emit below for wiggle
 
             elif action_name == "spin_360":
-                # Spin 360 degrees (approx 2.5s duration - adjust as needed)
+                # Spin 360 degrees (approx 2.5s duration)
                 duration = 2.5
+                start_time = time.time()
+                while time.time() - start_time < duration:
+                    apply_joystick(-100, 0) # Spin Left
+                    socketio.emit("motor_status", motor_state)
+                    if stop_action_event.wait(0.1): break
+                break # Exit loop after duration
+
+            elif action_name == "spin_180":
+                # Spin 180 degrees (approx 1.25s duration)
+                duration = 1.25
                 start_time = time.time()
                 while time.time() - start_time < duration:
                     apply_joystick(-100, 0) # Spin Left
