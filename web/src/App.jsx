@@ -96,6 +96,19 @@ export default function App() {
                     onRelease={handleJoystickRelease}
                 />
 
+                {/* Special Actions */}
+                <div className="actions-grid">
+                    <button className="action-btn" onClick={() => socket.emit('action', { type: 'spin_left' })}>
+                        🔄 Spin L
+                    </button>
+                    <button className="action-btn wiggle" onClick={() => socket.emit('action', { type: 'wiggle' })}>
+                        💃 Wiggle
+                    </button>
+                    <button className="action-btn" onClick={() => socket.emit('action', { type: 'spin_right' })}>
+                        🔄 Spin R
+                    </button>
+                </div>
+
                 {/* Emergency Stop */}
                 <div className="emergency-stop">
                     <button

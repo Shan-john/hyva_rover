@@ -154,9 +154,80 @@ def handle_disconnect():
     apply_joystick(0, 0)
 
 
+# ============================================
+# Action Logic
+# ============================================
+current_action_thread = None
+stop_action_event = threading.Event()
+
+
+def run_action(action_name):
+    """Run an automated action sequence in a thread."""
+    global current_action_thread
+    print(f"🎬 Starting action: {action_name}")
+    
+    # helper to sleep with interrupt check
+    def sleep_interruptible(duration):
+        return stop_action_event.wait(duration)
+
+    try:
+        if action_name == "spin_left":
+            # Spin left for 1.2s
+            apply_joystick(-100, 0)
+            emit("motor_status", motor_state)
+            if sleep_interruptible(1.2): return
+            
+        elif action_name == "spin_right":
+            # Spin right for 1.2s
+            apply_joystick(100, 0)
+            emit("motor_status", motor_state)
+            if sleep_interruptible(1.2): return
+
+        elif action_name == "wiggle":
+            # Wiggle left/right
+            for _ in range(3):
+                apply_joystick(-80, 0) # Left
+                emit("motor_status", motor_state)
+                if sleep_interruptible(0.3): return
+                
+                apply_joystick(80, 0)  # Right
+                emit("motor_status", motor_state)
+                if sleep_interruptible(0.3): return
+
+        # Stop at end
+        apply_joystick(0, 0)
+        emit("motor_status", motor_state)
+
+    except Exception as e:
+        print(f"Action error: {e}")
+    finally:
+        current_action_thread = None
+        print("🎬 Action finished")
+
+
+@socketio.on("action")
+def handle_action(data):
+    """Handle special action requests."""
+    global current_action_thread
+    action = data.get("type")
+    
+    # Stop any existing action
+    stop_action_event.set()
+    if current_action_thread and current_action_thread.is_alive():
+        current_action_thread.join(timeout=0.1)
+    
+    stop_action_event.clear()
+    current_action_thread = threading.Thread(target=run_action, args=(action,))
+    current_action_thread.start()
+
+
 @socketio.on("joystick")
 def handle_joystick(data):
     """Receive joystick data: {x: -100..100, y: -100..100}"""
+    # Interrupt any running action
+    if current_action_thread and current_action_thread.is_alive():
+        stop_action_event.set()
+
     x = data.get("x", 0)
     y = data.get("y", 0)
     state = apply_joystick(x, y)
@@ -166,6 +237,7 @@ def handle_joystick(data):
 @socketio.on("emergency_stop")
 def handle_emergency_stop():
     print("🛑 EMERGENCY STOP")
+    stop_action_event.set() # Stop any action
     state = apply_joystick(0, 0)
     emit("motor_status", state)
 
