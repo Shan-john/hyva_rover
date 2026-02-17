@@ -159,66 +159,67 @@ def handle_disconnect():
 # ============================================
 current_action_thread = None
 stop_action_event = threading.Event()
+action_lock = threading.Lock()
 
 
-def run_action(action_name):
-    """Run an automated action sequence in a thread."""
+def run_continuous_action(action_name):
+    """Run an action continuously until stopped."""
     global current_action_thread
-    print(f"🎬 Starting action: {action_name}")
+    print(f"🎬 Starting continuous action: {action_name}")
     
-    # helper to sleep with interrupt check
-    def sleep_interruptible(duration):
-        return stop_action_event.wait(duration)
+    while not stop_action_event.is_set():
+        try:
+            if action_name == "spin_left":
+                apply_joystick(-100, 0)
+            elif action_name == "spin_right":
+                apply_joystick(100, 0)
+            elif action_name == "wiggle":
+                # Wiggle pattern
+                apply_joystick(-100, 0)
+                emit("motor_status", motor_state)
+                if stop_action_event.wait(0.15): break
+                apply_joystick(100, 0)
+                emit("motor_status", motor_state)
+                if stop_action_event.wait(0.15): break
+                continue # Skip the default emit below for wiggle
 
-    try:
-        if action_name == "spin_left":
-            # Spin left for 1.2s
-            apply_joystick(-100, 0)
             emit("motor_status", motor_state)
-            if sleep_interruptible(1.2): return
             
-        elif action_name == "spin_right":
-            # Spin right for 1.2s
-            apply_joystick(100, 0)
-            emit("motor_status", motor_state)
-            if sleep_interruptible(1.2): return
-
-        elif action_name == "wiggle":
-            # Wiggle left/right
-            for _ in range(3):
-                apply_joystick(-80, 0) # Left
-                emit("motor_status", motor_state)
-                if sleep_interruptible(0.3): return
+            # Small sleep to prevent CPU hogging, check stop event frequently
+            if stop_action_event.wait(0.1): 
+                break
                 
-                apply_joystick(80, 0)  # Right
-                emit("motor_status", motor_state)
-                if sleep_interruptible(0.3): return
+        except Exception as e:
+            print(f"Action error: {e}")
+            break
 
-        # Stop at end
-        apply_joystick(0, 0)
-        emit("motor_status", motor_state)
-
-    except Exception as e:
-        print(f"Action error: {e}")
-    finally:
-        current_action_thread = None
-        print("🎬 Action finished")
+    # Stop at end
+    apply_joystick(0, 0)
+    emit("motor_status", motor_state)
+    print("🎬 Action stopped")
 
 
-@socketio.on("action")
-def handle_action(data):
-    """Handle special action requests."""
+@socketio.on("start_action")
+def handle_start_action(data):
+    """Start a continuous action."""
     global current_action_thread
     action = data.get("type")
     
-    # Stop any existing action
+    with action_lock:
+        # Stop any existing action
+        stop_action_event.set()
+        if current_action_thread and current_action_thread.is_alive():
+            current_action_thread.join(timeout=0.2)
+        
+        stop_action_event.clear()
+        current_action_thread = threading.Thread(target=run_continuous_action, args=(action,))
+        current_action_thread.start()
+
+
+@socketio.on("stop_action")
+def handle_stop_action():
+    """Stop the current action."""
     stop_action_event.set()
-    if current_action_thread and current_action_thread.is_alive():
-        current_action_thread.join(timeout=0.1)
-    
-    stop_action_event.clear()
-    current_action_thread = threading.Thread(target=run_action, args=(action,))
-    current_action_thread.start()
 
 
 @socketio.on("joystick")
