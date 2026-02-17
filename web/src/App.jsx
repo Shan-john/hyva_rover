@@ -131,6 +131,16 @@ export default function App() {
                     </button>
                 </div>
 
+                {/* One-Shot Actions */}
+                <div className="actions-grid single-shot">
+                    <button
+                        className="action-btn full-spin"
+                        onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_360' }) }}
+                    >
+                        🌪️ 360° Spin (2.5s)
+                    </button>
+                </div>
+
                 {/* Emergency Stop */}
                 <div className="emergency-stop">
                     <button
