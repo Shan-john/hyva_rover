@@ -98,13 +98,34 @@ export default function App() {
 
                 {/* Special Actions */}
                 <div className="actions-grid">
-                    <button className="action-btn" onClick={() => socket.emit('action', { type: 'spin_left' })}>
+                    <button
+                        className="action-btn"
+                        onMouseDown={() => socket.emit('start_action', { type: 'spin_left' })}
+                        onMouseUp={() => socket.emit('stop_action')}
+                        onMouseLeave={() => socket.emit('stop_action')}
+                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'spin_left' }) }}
+                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                    >
                         🔄 Spin L
                     </button>
-                    <button className="action-btn wiggle" onClick={() => socket.emit('action', { type: 'wiggle' })}>
+                    <button
+                        className="action-btn wiggle"
+                        onMouseDown={() => socket.emit('start_action', { type: 'wiggle' })}
+                        onMouseUp={() => socket.emit('stop_action')}
+                        onMouseLeave={() => socket.emit('stop_action')}
+                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'wiggle' }) }}
+                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                    >
                         💃 Wiggle
                     </button>
-                    <button className="action-btn" onClick={() => socket.emit('action', { type: 'spin_right' })}>
+                    <button
+                        className="action-btn"
+                        onMouseDown={() => socket.emit('start_action', { type: 'spin_right' })}
+                        onMouseUp={() => socket.emit('stop_action')}
+                        onMouseLeave={() => socket.emit('stop_action')}
+                        onTouchStart={(e) => { e.preventDefault(); socket.emit('start_action', { type: 'spin_right' }) }}
+                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                    >
                         🔄 Spin R
                     </button>
                 </div>
