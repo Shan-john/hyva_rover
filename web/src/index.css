@@ -1,0 +1,405 @@
+/* ============================================
+   CAR MOTOR CONTROLLER — Premium Dark Theme
+   ============================================ */
+
+:root {
+  /* Colors */
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: rgba(17, 24, 39, 0.7);
+  --bg-card-border: rgba(99, 102, 241, 0.15);
+  --bg-glass: rgba(15, 23, 42, 0.6);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent-blue: #6366f1;
+  --accent-blue-glow: rgba(99, 102, 241, 0.4);
+  --accent-cyan: #22d3ee;
+  --accent-green: #10b981;
+  --accent-green-glow: rgba(16, 185, 129, 0.4);
+  --accent-red: #ef4444;
+  --accent-red-glow: rgba(239, 68, 68, 0.4);
+  --accent-orange: #f59e0b;
+  --accent-purple: #a855f7;
+
+  --motor-a-color: #6366f1;
+  --motor-b-color: #22d3ee;
+
+  /* Sizing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Shadows */
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.1);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+
+  /* Fonts */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   Background Effects
+   ============================================ */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 80% 80%, rgba(34, 211, 238, 0.05) 0%, transparent 50%),
+    var(--bg-primary);
+}
+
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* ============================================
+   App Layout
+   ============================================ */
+.app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+.header {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.header h1 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.connection-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  transition: all 0.3s ease;
+}
+
+.connection-badge.disconnected {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-red);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 6px var(--accent-green-glow);
+  animation: pulse-dot 2s infinite;
+}
+
+.disconnected .status-dot {
+  background: var(--accent-red);
+  box-shadow: 0 0 6px var(--accent-red-glow);
+  animation: none;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ============================================
+   Motor Status Panel
+   ============================================ */
+.motor-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.motor-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.motor-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-glow);
+}
+
+.motor-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.motor-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.motor-card.motor-a .motor-label { color: var(--motor-a-color); }
+.motor-card.motor-b .motor-label { color: var(--motor-b-color); }
+
+.motor-direction-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--text-muted);
+}
+
+.motor-direction-badge.forward {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-green);
+}
+
+.motor-direction-badge.backward {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-orange);
+}
+
+.speed-bar-container {
+  position: relative;
+  height: 6px;
+  background: rgba(100, 116, 139, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.speed-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.15s ease-out;
+}
+
+.motor-card.motor-a .speed-bar {
+  background: linear-gradient(90deg, var(--motor-a-color), var(--accent-purple));
+}
+
+.motor-card.motor-b .speed-bar {
+  background: linear-gradient(90deg, var(--motor-b-color), var(--accent-blue));
+}
+
+.speed-value {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.speed-unit {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* ============================================
+   Joystick Area
+   ============================================ */
+.joystick-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.joystick-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.joystick-canvas {
+  touch-action: none;
+  cursor: grab;
+}
+
+.joystick-canvas:active {
+  cursor: grabbing;
+}
+
+.joystick-values {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.joy-val {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(100, 116, 139, 0.08);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.joy-val span {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+/* ============================================
+   Emergency Stop Button
+   ============================================ */
+.emergency-stop {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.stop-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+}
+
+.stop-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(239, 68, 68, 0.4);
+}
+
+.stop-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   Direction Indicator
+   ============================================ */
+.direction-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.dir-arrow {
+  font-size: 1.5rem;
+  opacity: 0.15;
+  transition: all 0.2s ease;
+}
+
+.dir-arrow.active {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--accent-cyan));
+}
+
+.dir-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  min-width: 80px;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.dir-label.active {
+  color: var(--accent-cyan);
+}
+
+/* ============================================
+   Responsive / Desktop
+   ============================================ */
+@media (min-width: 768px) {
+  .app {
+    max-width: 600px;
+    padding: 24px;
+    gap: 16px;
+  }
+
+  .header h1 {
+    font-size: 1.6rem;
+  }
+
+  .motor-card {
+    padding: 18px;
+  }
+}
