@@ -5,3 +5,5 @@ node_modules/
 web/node_modules/
 .env
 firebase_credentials.json
+web/dist/
+lidar/YDLidar-SDK/
