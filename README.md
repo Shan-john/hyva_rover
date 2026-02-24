@@ -1,100 +1,146 @@
-# 🏎️ WiFi Car Control Project
+# 🚗 Hyva Rover
 
-A web-based car control system powered by **Raspberry Pi**, **Flask** (Python), and **React** (Vite). It features a responsive joystick interface, real-time WebSocket communication, and special action buttons for automated maneuvers.
+A **Raspberry Pi-powered autonomous rover** with a web-based control interface. Drive manually with a touch joystick, scan your surroundings with an **RPLidar A1**, build occupancy-grid maps in real time, and let the rover explore on its own using frontier-based autonomous navigation.
+
+Built with **Flask + Socket.IO** (backend) and **React + Vite** (frontend).
+
+---
 
 ## ✨ Features
 
-- **Real-time Control:** Low-latency WebSocket communication (Socket.IO).
-- **Responsive Interface:** Works on mobile and desktop with touch support.
-- **Dual Joystick Axes:** 
-  - **Y-Axis:** Throttle (Forward/Backward)
-  - **X-Axis:** Steering (Left/Right) - Differential Drive
-- **Special Actions:**
-  - **🔄 Spin L/R:** Quick 360° turn (Hold to activate)
-  - **💃 Wiggle:** Rapid left-right shake (Hold to activate)
-  - **🌪️ 360° Spin:** Automated full 360 degree spin (Single tap, 2.5s duration)
-  - **💫 180° Spin:** Automated half 180 degree spin (Single tap, 1.25s duration)
-- **Safety Features:**
-  - **⛔ Emergency Stop:** Immediately cuts power to motors.
-  - **Auto-Stop:** Motors stop if connection is lost or joystick is released.
-  - **Action Interrupt:** Touching the joystick immediately cancels any automated action.
+### 🎮 Manual Control
+- **Touch Joystick** — responsive dual-axis control (throttle + steering)
+- **Differential Drive** — smooth turns via independent left/right motor speeds
+- **Special Actions** — 360° spin, 180° spin, wiggle, spin left/right (tap or hold)
+- **Emergency Stop** — instant motor kill from the UI
 
-## 🛠️ Hardware Requirements
+### 🗺️ LiDAR Mapping
+- **RPLidar A1** integration via a crash-safe child process
+- **Real-time occupancy grid** streamed to the browser over WebSocket
+- **Dead reckoning** pose estimation (wheel-base odometry)
+- **Save / Load / Delete** named maps
 
-- **Raspberry Pi** (3, 4, or Zero W) with WiFi capability.
-- **L298N Motor Driver Module**.
-- **DC Motors** (2x) + Chassis + Wheels.
-- **Power Supply** (Battery pack for Pi + separate battery for motors/L298N).
-- **Jumper Wires**.
+### 🤖 Autonomous Modes
+- **Frontier-based exploration** — the rover discovers unmapped areas automatically
+- **Autonomous navigation** — path planning on a saved map
+- **Return-to-start** — one-tap command to navigate home
 
-### wiring (Default GPIO Config)
+### 🔒 Safety
+- Auto-stop on connection loss or joystick release
+- Joystick touch instantly cancels any running action
+- Graceful shutdown with `SIGINT` / `SIGTERM` handlers
 
-| L298N Pin | Raspberry Pi GPIO (BCM) |
-| :--- | :--- |
-| **ENA** | GPIO 22 |
-| **IN1** | GPIO 17 |
-| **IN2** | GPIO 27 |
-| **IN3** | GPIO 23 |
-| **IN4** | GPIO 24 |
-| **ENB** | GPIO 25 |
+---
 
-> **Note:** Pin mappings can be changed in `config.py`.
+## 🛠️ Hardware
 
-## 🚀 Installation
+| Component | Details |
+|---|---|
+| **SBC** | Raspberry Pi 3 / 4 / Zero W |
+| **Motor Driver** | L298N (dual H-bridge) |
+| **Motors** | 2 × DC gear motors + chassis + wheels |
+| **LiDAR** | RPLidar A1 (USB serial) |
+| **Power** | Battery pack for Pi + separate battery for L298N |
 
-### 1. Clone the Repository
+### Wiring (Default GPIO — BCM)
+
+| L298N Pin | RPi GPIO |
+|---|---|
+| ENA | 22 |
+| IN1 | 17 |
+| IN2 | 27 |
+| IN3 | 23 |
+| IN4 | 24 |
+| ENB | 25 |
+
+> Pin mappings are configurable in `config.py`.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone
 ```bash
-git clone <repository-url>
-cd carprc
+git clone https://github.com/Shan-john/hyva_rover.git
+cd hyva_rover
 ```
 
-### 2. Setup Backend (Flask)
+### 2. Backend Setup
 ```bash
-# Create virtual environment (optional but recommended)
 python3 -m venv venv
 source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
-*Dependencies: `flask`, `flask-cors`, `flask-socketio`, `RPi.GPIO`*
 
-### 3. Setup Frontend (React)
+> **Dependencies:** `flask`, `flask-cors`, `flask-socketio`, `rplidar-roboticia`, `RPi.GPIO`
+
+### 3. Frontend Setup
 ```bash
 cd web
 npm install
 ```
 
-## 🎮 Usage
+### 4. Run
 
-### 1. Start the Backend Server (on Raspberry Pi)
-Requires `sudo` for GPIO access.
+**Start the server** (requires `sudo` for GPIO):
 ```bash
-# From project root
 sudo python3 server.py
 ```
-*Server runs on port 5000.*
 
-### 2. Start the Frontend Dev Server
+**Start the frontend dev server:**
 ```bash
-# From project root
 cd web
 npm run dev -- --host
 ```
-*Access the controller via `http://<YOUR_PI_IP>:5173` on your phone or laptop.*
+
+Open `http://<PI_IP>:5173` on your phone or laptop.
+
+---
 
 ## 🔧 Configuration
-- **Motor Speed:** Adjust `MOTOR_DEFAULT_SPEED` in `config.py`.
-- **Pin Mapping:** Modify GPIO pin numbers in `config.py`.
-- **Joystick Sensitivity:** Adjust `DEAD_ZONE` in `server.py` or scaling factors in `Joystick.jsx`.
+
+All tunables live in **`config.py`**:
+
+| Parameter | Default | Description |
+|---|---|---|
+| `MOTOR_DEFAULT_SPEED` | 70 | Default motor PWM % |
+| `LIDAR_PORT` | `/dev/ttyUSB0` | RPLidar serial port |
+| `LIDAR_BAUDRATE` | 115200 | RPLidar A1 baud rate |
+| `LIDAR_MAX_RANGE` | 12.0 m | Max detection range |
+| `GRID_RESOLUTION` | 0.05 m | Occupancy grid cell size |
+| `NAV_OBSTACLE_THRESHOLD` | 0.35 m | Obstacle avoidance distance |
+| `EXPLORE_SPEED` | 40 | PWM % during exploration |
+
+---
 
 ## 📂 Project Structure
-- `server.py`: Flask application handling WebSocket events and motor logic.
-- `main_dual_motor.py`: Low-level motor control class using RPi.GPIO.
-- `config.py`: Configuration file for pins and constants.
-- `web/`: React frontend application.
-  - `src/components/Joystick.jsx`: Touch-enabled joystick component.
-  - `src/App.jsx`: Main UI logic and socket communication.
+
+```
+carprc/
+├── server.py              # Flask + Socket.IO server (motor, LiDAR, nav events)
+├── main_dual_motor.py     # L298N dual motor driver (RPi.GPIO)
+├── lidar_scanner.py       # RPLidar A1 child-process wrapper
+├── occupancy_grid.py      # 2D occupancy grid (log-odds)
+├── path_planner.py        # Frontier detection + path planning
+├── pose_estimator.py      # Dead-reckoning pose tracker
+├── map_manager.py         # Save / load / delete maps
+├── config.py              # All hardware & navigation constants
+├── requirements.txt       # Python dependencies
+├── web/                   # React + Vite frontend
+│   ├── src/
+│   │   ├── App.jsx        # Main UI + socket logic
+│   │   ├── index.css      # Styles
+│   │   └── components/
+│   │       ├── Joystick.jsx    # Touch joystick component
+│   │       └── MotorStatus.jsx # Motor status display
+│   ├── index.html
+│   ├── vite.config.js
+│   └── package.json
+└── maps/                  # Saved map files
+```
+
+---
 
 ## 📜 License
+
 MIT License

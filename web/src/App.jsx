@@ -10,6 +10,7 @@ export default function App() {
     const [motorA, setMotorA] = useState({ direction: 'stop', speed: 0 })
     const [motorB, setMotorB] = useState({ direction: 'stop', speed: 0 })
     const [direction, setDirection] = useState('IDLE')
+    const [activeTab, setActiveTab] = useState('control')
 
     // LiDAR state
     const [lidarState, setLidarState] = useState({
@@ -115,42 +116,37 @@ export default function App() {
         const cx = w / 2
         const cy = h / 2
 
-        // Clear
         ctx.fillStyle = '#0a0e17'
         ctx.fillRect(0, 0, w, h)
 
-        // Draw occupancy grid if available
         if (gridData && gridData.grid) {
             const grid = gridData.grid
             const rows = grid.length
             const cols = rows > 0 ? grid[0].length : 0
-            const origin = gridData.origin || Math.floor(rows / 2)
             const cellPx = Math.min(w, h) / rows
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const v = grid[r][c]
-                    if (v === 0) continue // skip unknown (already dark)
+                    if (v === 0) continue
                     const px = c * cellPx
                     const py = r * cellPx
                     if (v === 1) {
-                        ctx.fillStyle = 'rgba(15,20,40,0.8)' // free = very dark blue
+                        ctx.fillStyle = 'rgba(15,20,40,0.8)'
                     } else if (v === 100) {
-                        ctx.fillStyle = 'rgba(200,210,230,0.9)' // wall = white
+                        ctx.fillStyle = 'rgba(200,210,230,0.9)'
                     }
                     ctx.fillRect(px, py, cellPx + 0.5, cellPx + 0.5)
                 }
             }
         }
 
-        // Scale for scan points
         let maxDist = 0
         for (const p of mapPoints) {
             if (p.distance > maxDist) maxDist = p.distance
         }
         const scale = maxDist > 0 ? (Math.min(cx, cy) - 20) / maxDist : 20
 
-        // Draw grid circles (only if no occupancy grid)
         if (!gridData) {
             const ringCount = 4
             for (let i = 1; i <= ringCount; i++) {
@@ -167,14 +163,12 @@ export default function App() {
             }
         }
 
-        // Crosshair
         ctx.strokeStyle = 'rgba(99,102,241,0.08)'
         ctx.beginPath()
         ctx.moveTo(cx, 0); ctx.lineTo(cx, h)
         ctx.moveTo(0, cy); ctx.lineTo(w, cy)
         ctx.stroke()
 
-        // Draw path trail
         if (pathData.length > 1) {
             ctx.beginPath()
             ctx.strokeStyle = 'rgba(168,85,247,0.4)'
@@ -188,7 +182,6 @@ export default function App() {
             ctx.stroke()
         }
 
-        // Draw sector indicators if navigating
         if (navStatus && navStatus.sector_distances && navStatus.sector_distances.length > 0) {
             const sectorCount = navStatus.sector_distances.length
             const sectorWidth = (2 * Math.PI) / sectorCount
@@ -209,7 +202,6 @@ export default function App() {
             })
         }
 
-        // Draw scan points
         for (const p of mapPoints) {
             const px = cx + p.x * scale
             const py = cy - p.y * scale
@@ -222,7 +214,6 @@ export default function App() {
             ctx.fill()
         }
 
-        // Car icon at centre
         ctx.beginPath()
         ctx.arc(cx, cy, 6, 0, Math.PI * 2)
         ctx.fillStyle = '#6366f1'
@@ -231,7 +222,6 @@ export default function App() {
         ctx.lineWidth = 2
         ctx.stroke()
 
-        // Forward direction triangle
         ctx.beginPath()
         ctx.moveTo(cx, cy - 14)
         ctx.lineTo(cx - 5, cy - 8)
@@ -276,7 +266,6 @@ export default function App() {
         setExploreStatus(null)
     }, [])
 
-    // LiDAR controls
     const toggleMapping = useCallback(() => {
         if (navigator.vibrate) navigator.vibrate(50)
         if (lidarState.mapping) {
@@ -341,139 +330,237 @@ export default function App() {
             <div className="app">
                 {/* Header */}
                 <header className="header">
-                    <h1>🏎️ Car Motor Controller</h1>
+                    <h1>🚗 Hyva Rover</h1>
                     <div className={`connection-badge ${connected ? '' : 'disconnected'}`}>
                         <span className="status-dot" />
                         {connected ? 'WiFi Connected' : 'Disconnected'}
                     </div>
                 </header>
 
-                {/* LiDAR Section */}
-                <div className="lidar-section">
-                    <div className="lidar-header">
-                        <span className="lidar-title">📡 LiDAR & Navigation</span>
-                        <span className={`lidar-badge ${lidarState.available ? 'online' : 'offline'}`}>
-                            {lidarState.available ? 'ONLINE' : 'OFFLINE'}
-                        </span>
-                    </div>
+                {/* ==================== CONTROL TAB ==================== */}
+                {activeTab === 'control' && (
+                    <div className="page page-control">
+                        {/* Three-column layout: Left buttons | Joystick | Right buttons */}
+                        <div className="cockpit-layout">
+                            {/* Left side buttons */}
+                            <div className="side-buttons side-left">
+                                <button
+                                    className="side-btn"
+                                    onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
+                                    onMouseUp={() => socket.emit('stop_action')}
+                                    onMouseLeave={() => socket.emit('stop_action')}
+                                    onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
+                                    onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                                >
+                                    <span className="side-btn-icon">🔄</span>
+                                    <span className="side-btn-label">Spin L</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-wiggle"
+                                    onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
+                                    onMouseUp={() => socket.emit('stop_action')}
+                                    onMouseLeave={() => socket.emit('stop_action')}
+                                    onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
+                                    onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                                >
+                                    <span className="side-btn-icon">💃</span>
+                                    <span className="side-btn-label">Wiggle</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-half-spin"
+                                    onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_180' }) }}
+                                >
+                                    <span className="side-btn-icon">💫</span>
+                                    <span className="side-btn-label">180°</span>
+                                </button>
+                            </div>
 
-                    {/* Map Canvas */}
-                    <div className="map-canvas-container">
-                        <canvas
-                            ref={mapCanvasRef}
-                            width={320}
-                            height={320}
-                            className="map-canvas"
-                        />
-                        {mapPoints.length === 0 && !gridData && (
-                            <div className="map-placeholder">
-                                <span>📡</span>
-                                <p>Press a button below to start</p>
-                            </div>
-                        )}
-                        {navStatus && (
-                            <div className="nav-overlay">
-                                <span className={`nav-action ${navStatus.action}`}>
-                                    {navStatus.action === 'forward' && '⬆️ FORWARD'}
-                                    {navStatus.action === 'turn_left' && '⬅️ TURN LEFT'}
-                                    {navStatus.action === 'turn_right' && '➡️ TURN RIGHT'}
-                                    {navStatus.action === 'stop' && '⛔ BLOCKED'}
-                                </span>
-                            </div>
-                        )}
-                        {/* Exploration progress overlay */}
-                        {exploreStatus && (
-                            <div className="explore-overlay">
-                                <div className="explore-progress-bar">
-                                    <div
-                                        className="explore-progress-fill"
-                                        style={{ width: `${exploreStatus.explored_pct || 0}%` }}
-                                    />
+                            {/* Center: Joystick + Direction */}
+                            <div className="cockpit-center">
+                                <Joystick
+                                    size={200}
+                                    onMove={handleJoystickMove}
+                                    onRelease={handleJoystickRelease}
+                                />
+                                <div className="direction-indicator">
+                                    <span className={`dir-label ${direction !== 'IDLE' ? 'active' : ''}`}>
+                                        {direction}
+                                    </span>
                                 </div>
-                                <span className="explore-pct">
-                                    {(exploreStatus.explored_pct || 0).toFixed(1)}% mapped
-                                </span>
-                                {exploreStatus.complete && <span className="explore-done">✅ Complete</span>}
                             </div>
-                        )}
-                        {/* Pose info */}
-                        {poseData && (
-                            <div className="pose-info">
-                                <span>📍 ({poseData.x?.toFixed(2)}, {poseData.y?.toFixed(2)}) {poseData.heading?.toFixed(0)}°</span>
+
+                            {/* Right side buttons */}
+                            <div className="side-buttons side-right">
+                                <button
+                                    className="side-btn"
+                                    onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
+                                    onMouseUp={() => socket.emit('stop_action')}
+                                    onMouseLeave={() => socket.emit('stop_action')}
+                                    onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
+                                    onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
+                                >
+                                    <span className="side-btn-icon">🔄</span>
+                                    <span className="side-btn-label">Spin R</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-full-spin"
+                                    onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_360' }) }}
+                                >
+                                    <span className="side-btn-icon">🌪️</span>
+                                    <span className="side-btn-label">360°</span>
+                                </button>
+                                <button
+                                    id="emergency-stop-btn"
+                                    className="side-btn btn-stop"
+                                    onClick={handleEmergencyStop}
+                                >
+                                    <span className="side-btn-icon">⛔</span>
+                                    <span className="side-btn-label">STOP</span>
+                                </button>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Motor Status Cards */}
+                        <MotorStatus motorA={motorA} motorB={motorB} />
                     </div>
+                )}
 
-                    {/* Exploration Mode Selector */}
-                    <div className="mode-selector">
-                        {[
-                            { id: 'explore', label: '🔍 Explore', tip: 'Auto-discover' },
-                            { id: 'coverage', label: '📐 Coverage', tip: 'Grid sweep' },
-                            { id: 'boundary', label: '🔲 Boundary', tip: 'Follow walls' },
-                            { id: 'corners', label: '📌 Corners', tip: 'Visit corners' },
-                        ].map(m => (
-                            <button
-                                key={m.id}
-                                className={`mode-btn ${exploreMode === m.id ? 'active' : ''}`}
-                                onClick={() => handleModeChange(m.id)}
-                                title={m.tip}
-                            >
-                                {m.label}
-                            </button>
-                        ))}
-                    </div>
+                {/* ==================== LIDAR TAB ==================== */}
+                {activeTab === 'lidar' && (
+                    <div className="page page-lidar">
+                        {/* Three-column layout: Left buttons | Map | Right buttons */}
+                        <div className="cockpit-layout">
+                            {/* Left side: scan controls */}
+                            <div className="side-buttons side-left">
+                                <button
+                                    className={`side-btn btn-explore ${lidarState.exploring ? 'active' : ''}`}
+                                    onClick={toggleExploration}
+                                    disabled={lidarState.mapping || lidarState.navigating}
+                                    id="explore-room-btn"
+                                >
+                                    <span className="side-btn-icon">🔍</span>
+                                    <span className="side-btn-label">{lidarState.exploring ? 'Stop' : 'Explore'}</span>
+                                </button>
+                                <button
+                                    className={`side-btn btn-map ${lidarState.mapping ? 'active' : ''}`}
+                                    onClick={toggleMapping}
+                                    disabled={lidarState.exploring || lidarState.navigating}
+                                    id="map-surroundings-btn"
+                                >
+                                    <span className="side-btn-icon">🗺️</span>
+                                    <span className="side-btn-label">{lidarState.mapping ? 'Stop' : 'Map'}</span>
+                                </button>
+                                <button
+                                    className={`side-btn btn-nav ${lidarState.navigating ? 'active' : ''}`}
+                                    onClick={toggleNavigation}
+                                    disabled={lidarState.exploring || lidarState.mapping}
+                                    id="run-path-btn"
+                                >
+                                    <span className="side-btn-icon">🚗</span>
+                                    <span className="side-btn-label">{lidarState.navigating ? 'Stop' : 'Navigate'}</span>
+                                </button>
+                            </div>
 
-                    {/* Main LiDAR Buttons */}
-                    <div className="lidar-buttons">
-                        <button
-                            className={`lidar-btn explore-btn ${lidarState.exploring ? 'active' : ''}`}
-                            onClick={toggleExploration}
-                            disabled={lidarState.mapping || lidarState.navigating}
-                            id="explore-room-btn"
-                        >
-                            <span className="lidar-btn-icon">🔍</span>
-                            <span>{lidarState.exploring ? 'Stop Exploring' : 'Explore Room'}</span>
-                        </button>
-                        <button
-                            className={`lidar-btn map-btn ${lidarState.mapping ? 'active' : ''}`}
-                            onClick={toggleMapping}
-                            disabled={lidarState.exploring || lidarState.navigating}
-                            id="map-surroundings-btn"
-                        >
-                            <span className="lidar-btn-icon">🗺️</span>
-                            <span>{lidarState.mapping ? 'Stop Mapping' : 'Map Surroundings'}</span>
-                        </button>
-                    </div>
+                            {/* Center: Map Canvas */}
+                            <div className="cockpit-center">
+                                <div className="lidar-status-row">
+                                    <span className={`lidar-badge ${lidarState.available ? 'online' : 'offline'}`}>
+                                        {lidarState.available ? 'ONLINE' : 'OFFLINE'}
+                                    </span>
+                                </div>
+                                <div className="map-canvas-container">
+                                    <canvas
+                                        ref={mapCanvasRef}
+                                        width={320}
+                                        height={320}
+                                        className="map-canvas"
+                                    />
+                                    {mapPoints.length === 0 && !gridData && (
+                                        <div className="map-placeholder">
+                                            <span>📡</span>
+                                            <p>Start scanning</p>
+                                        </div>
+                                    )}
+                                    {navStatus && (
+                                        <div className="nav-overlay">
+                                            <span className={`nav-action ${navStatus.action}`}>
+                                                {navStatus.action === 'forward' && '⬆️'}
+                                                {navStatus.action === 'turn_left' && '⬅️'}
+                                                {navStatus.action === 'turn_right' && '➡️'}
+                                                {navStatus.action === 'stop' && '⛔'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {exploreStatus && (
+                                        <div className="explore-overlay">
+                                            <div className="explore-progress-bar">
+                                                <div
+                                                    className="explore-progress-fill"
+                                                    style={{ width: `${exploreStatus.explored_pct || 0}%` }}
+                                                />
+                                            </div>
+                                            <span className="explore-pct">
+                                                {(exploreStatus.explored_pct || 0).toFixed(1)}%
+                                            </span>
+                                            {exploreStatus.complete && <span className="explore-done">✅</span>}
+                                        </div>
+                                    )}
+                                    {poseData && (
+                                        <div className="pose-info">
+                                            <span>📍 ({poseData.x?.toFixed(2)}, {poseData.y?.toFixed(2)}) {poseData.heading?.toFixed(0)}°</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                    <div className="lidar-buttons">
-                        <button
-                            className={`lidar-btn nav-btn ${lidarState.navigating ? 'active' : ''}`}
-                            onClick={toggleNavigation}
-                            disabled={lidarState.exploring || lidarState.mapping}
-                            id="run-path-btn"
-                        >
-                            <span className="lidar-btn-icon">🚗</span>
-                            <span>{lidarState.navigating ? 'Stop Navigation' : 'Run Path'}</span>
-                        </button>
-                        <button
-                            className="lidar-btn return-btn"
-                            onClick={handleReturnToStart}
-                            disabled={!lidarState.exploring}
-                        >
-                            <span className="lidar-btn-icon">🏠</span>
-                            <span>Return Home</span>
-                        </button>
-                    </div>
+                            {/* Right side: modes + home + maps */}
+                            <div className="side-buttons side-right">
+                                <button
+                                    className="side-btn btn-home"
+                                    onClick={handleReturnToStart}
+                                    disabled={!lidarState.exploring}
+                                >
+                                    <span className="side-btn-icon">🏠</span>
+                                    <span className="side-btn-label">Home</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-save"
+                                    onClick={handleSaveMap}
+                                    disabled={!isAnyActive && mapPoints.length === 0}
+                                >
+                                    <span className="side-btn-icon">💾</span>
+                                    <span className="side-btn-label">Save</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-maps"
+                                    onClick={() => setShowMapPanel(!showMapPanel)}
+                                >
+                                    <span className="side-btn-icon">📂</span>
+                                    <span className="side-btn-label">Maps</span>
+                                </button>
+                            </div>
+                        </div>
 
-                    {/* Map Management */}
-                    <div className="map-management">
-                        <button
-                            className="map-toggle-btn"
-                            onClick={() => setShowMapPanel(!showMapPanel)}
-                        >
-                            💾 Saved Maps ({savedMaps.length}) {showMapPanel ? '▲' : '▼'}
-                        </button>
+                        {/* Exploration Mode Selector (below the cockpit) */}
+                        <div className="mode-selector">
+                            {[
+                                { id: 'explore', label: '🔍 Explore', tip: 'Auto-discover' },
+                                { id: 'coverage', label: '📐 Coverage', tip: 'Grid sweep' },
+                                { id: 'boundary', label: '🔲 Boundary', tip: 'Follow walls' },
+                                { id: 'corners', label: '📌 Corners', tip: 'Visit corners' },
+                            ].map(m => (
+                                <button
+                                    key={m.id}
+                                    className={`mode-btn ${exploreMode === m.id ? 'active' : ''}`}
+                                    onClick={() => handleModeChange(m.id)}
+                                    title={m.tip}
+                                >
+                                    {m.label}
+                                </button>
+                            ))}
+                        </div>
 
+                        {/* Map Management Panel (collapsible) */}
                         {showMapPanel && (
                             <div className="map-panel">
                                 <div className="map-save-row">
@@ -521,86 +608,27 @@ export default function App() {
                             </div>
                         )}
                     </div>
-                </div>
-
-                {/* Special Actions */}
-                <div className="actions-grid">
-                    <button
-                        className="action-btn"
-                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
-                        onMouseUp={() => socket.emit('stop_action')}
-                        onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_left' }) }}
-                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
-                    >
-                        🔄 Spin L
-                    </button>
-                    <button
-                        className="action-btn wiggle"
-                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
-                        onMouseUp={() => socket.emit('stop_action')}
-                        onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'wiggle' }) }}
-                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
-                    >
-                        💃 Wiggle
-                    </button>
-                    <button
-                        className="action-btn"
-                        onMouseDown={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
-                        onMouseUp={() => socket.emit('stop_action')}
-                        onMouseLeave={() => socket.emit('stop_action')}
-                        onTouchStart={(e) => { e.preventDefault(); if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_right' }) }}
-                        onTouchEnd={(e) => { e.preventDefault(); socket.emit('stop_action') }}
-                    >
-                        🔄 Spin R
-                    </button>
-                </div>
-
-                {/* One-Shot Actions */}
-                <div className="actions-grid single-shot half-split">
-                    <button
-                        className="action-btn half-spin"
-                        onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_180' }) }}
-                    >
-                        💫 180° Spin
-                    </button>
-                    <button
-                        className="action-btn full-spin"
-                        onClick={() => { if (navigator.vibrate) navigator.vibrate(50); socket.emit('start_action', { type: 'spin_360' }) }}
-                    >
-                        🌪️ 360° Spin
-                    </button>
-                </div>
-
-                {/* Emergency Stop */}
-                <div className="emergency-stop">
-                    <button
-                        id="emergency-stop-btn"
-                        className="stop-btn"
-                        onClick={handleEmergencyStop}
-                    >
-                        ⛔ Emergency Stop
-                    </button>
-                </div>
-
-                {/* Motor Status Cards */}
-                <MotorStatus motorA={motorA} motorB={motorB} />
-
-                {/* Direction Label */}
-                <div className="direction-indicator">
-                    <span className={`dir-label ${direction !== 'IDLE' ? 'active' : ''}`}>
-                        {direction}
-                    </span>
-                </div>
-
-                {/* Joystick */}
-                <Joystick
-                    size={240}
-                    onMove={handleJoystickMove}
-                    onRelease={handleJoystickRelease}
-                />
+                )}
             </div>
+
+            {/* ==================== BOTTOM NAV BAR ==================== */}
+            <nav className="bottom-nav">
+                <button
+                    className={`nav-tab ${activeTab === 'control' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('control')}
+                >
+                    <span className="nav-tab-icon">🎮</span>
+                    <span className="nav-tab-label">Control</span>
+                </button>
+                <button
+                    className={`nav-tab ${activeTab === 'lidar' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('lidar')}
+                >
+                    <span className="nav-tab-icon">📡</span>
+                    <span className="nav-tab-label">LiDAR</span>
+                    {isAnyActive && <span className="activity-dot" />}
+                </button>
+            </nav>
         </>
     )
 }

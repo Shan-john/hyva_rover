@@ -102,7 +102,7 @@ body {
   margin: 0 auto;
   padding: 16px;
   gap: 20px;
-  padding-bottom: 40px;
+  padding-bottom: 100px;
 }
 
 /* ============================================
@@ -1059,4 +1059,364 @@ body {
   font-weight: 600;
   color: rgba(148, 163, 184, 0.7);
   font-family: var(--font-mono, monospace);
+}
+
+/* ============================================
+   Page Wrappers
+   ============================================ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: page-in 0.25s ease-out;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Cockpit Layout (3-column: buttons | center | buttons)
+   ============================================ */
+.cockpit-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.cockpit-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.side-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 72px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Side Buttons
+   ============================================ */
+.side-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 6px;
+  min-height: 68px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--accent-blue);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.side-btn-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.side-btn-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.side-btn:active {
+  transform: scale(0.92);
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-blue);
+}
+
+/* — Color variants — */
+.side-btn.btn-wiggle {
+  background: rgba(168, 85, 247, 0.08);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.side-btn.btn-wiggle:active {
+  background: rgba(168, 85, 247, 0.22);
+  border-color: #a855f7;
+}
+
+.side-btn.btn-half-spin {
+  background: rgba(34, 211, 238, 0.08);
+  color: var(--accent-cyan);
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+.side-btn.btn-half-spin:active {
+  background: rgba(34, 211, 238, 0.22);
+  border-color: var(--accent-cyan);
+}
+
+.side-btn.btn-full-spin {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--accent-orange);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.side-btn.btn-full-spin:active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: var(--accent-orange);
+}
+
+.side-btn.btn-stop {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--accent-red);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.side-btn.btn-stop:active {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--accent-red);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
+}
+
+/* LiDAR side buttons */
+.side-btn.btn-explore {
+  background: rgba(168, 85, 247, 0.08);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.side-btn.btn-explore.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
+  animation: side-pulse-purple 2s infinite;
+}
+
+.side-btn.btn-map {
+  background: rgba(34, 211, 238, 0.08);
+  color: var(--accent-cyan);
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+.side-btn.btn-map.active {
+  background: rgba(34, 211, 238, 0.2);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.25);
+  animation: side-pulse-cyan 2s infinite;
+}
+
+.side-btn.btn-nav {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent-green);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.side-btn.btn-nav.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--accent-green);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+  animation: side-pulse-green 2s infinite;
+}
+
+.side-btn.btn-home {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--accent-orange);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.side-btn.btn-save {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--accent-green);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.side-btn.btn-maps {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--accent-blue);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.side-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.side-btn:disabled:active {
+  transform: none;
+}
+
+@keyframes side-pulse-purple {
+
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.4);
+  }
+}
+
+@keyframes side-pulse-cyan {
+
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.4);
+  }
+}
+
+@keyframes side-pulse-green {
+
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.4);
+  }
+}
+
+/* LiDAR status row */
+.lidar-status-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+/* ============================================
+   Bottom Navigation Bar
+   ============================================ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  height: 72px;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(99, 102, 241, 0.12);
+  padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.nav-tab {
+  position: relative;
+  flex: 1;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.nav-tab-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: color 0.2s ease;
+}
+
+.nav-tab.active {
+  color: var(--accent-blue);
+}
+
+.nav-tab.active .nav-tab-icon {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 6px var(--accent-blue-glow));
+}
+
+.nav-tab.active .nav-tab-label {
+  color: var(--accent-blue);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  box-shadow: 0 0 12px var(--accent-blue-glow);
+}
+
+.nav-tab:active {
+  transform: scale(0.92);
+}
+
+/* Activity dot — pulses when LiDAR is active */
+.activity-dot {
+  position: absolute;
+  top: 10px;
+  right: calc(50% - 22px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green-glow);
+  animation: activity-pulse 1.5s infinite;
+}
+
+@keyframes activity-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
 }
