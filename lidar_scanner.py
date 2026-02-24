@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-LiDAR Scanner Module — wraps YDLidar G2 SDK for 2D scanning.
+LiDAR Scanner Module — wraps RPLidar (A1/A2) for 2D scanning.
 
-Runs the actual SDK in a **child process** so that the SDK's own signal
-handlers and any C++ segfaults cannot crash the Flask server.
+Runs the actual library in a **child process** so that any USB serial
+hangs or SDK errors cannot crash the Flask server.
 Scan data is sent back to the parent via a multiprocessing.Queue.
 """
 
@@ -15,29 +15,21 @@ import sys
 import os
 import signal
 
-# Add the YDLidar SDK build dir to path (needed when running under sudo)
-_sdk_build_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "lidar", "YDLidar-SDK", "build", "python"
-)
-if os.path.isdir(_sdk_build_path):
-    sys.path.insert(0, _sdk_build_path)
-
 try:
-    import ydlidar
+    from rplidar import RPLidar, RPLidarException
     LIDAR_AVAILABLE = True
 except ImportError:
     LIDAR_AVAILABLE = False
-    print("⚠  ydlidar SDK not available — LiDAR features disabled")
+    print("⚠  rplidar library not available — LiDAR features disabled")
 
 from config import (
     LIDAR_PORT, LIDAR_BAUDRATE, LIDAR_SCAN_FREQUENCY,
-    LIDAR_SAMPLE_RATE, LIDAR_MAX_RANGE, LIDAR_MIN_RANGE, VERBOSE_MODE
+    LIDAR_MAX_RANGE, LIDAR_MIN_RANGE, VERBOSE_MODE
 )
 
 
 # ------------------------------------------------------------------
-# Child-process worker (runs the ydlidar C SDK)
+# Child-process worker (runs the rplidar library)
 # ------------------------------------------------------------------
 
 def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
@@ -49,83 +41,93 @@ def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
     # Ignore SIGINT in the child — let parent handle it
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    # Make sure SDK path is available in the child too
-    sdk = cfg.get("sdk_path")
-    if sdk and os.path.isdir(sdk):
-        sys.path.insert(0, sdk)
-
-    try:
-        import ydlidar as yd
-    except ImportError:
-        out_queue.put({"type": "error", "msg": "ydlidar SDK not found in child"})
+    if not LIDAR_AVAILABLE:
+        out_queue.put({"type": "error", "msg": "rplidar library not found in child"})
         return
 
+    lidar = None
     try:
-        yd.os_init()
-        laser = yd.CYdLidar()
-        laser.setlidaropt(yd.LidarPropSerialPort, cfg["port"])
-        laser.setlidaropt(yd.LidarPropSerialBaudrate, cfg["baud"])
-        laser.setlidaropt(yd.LidarPropLidarType, yd.TYPE_TRIANGLE)
-        laser.setlidaropt(yd.LidarPropDeviceType, yd.YDLIDAR_TYPE_SERIAL)
-        laser.setlidaropt(yd.LidarPropScanFrequency, cfg["freq"])
-        laser.setlidaropt(yd.LidarPropSampleRate, cfg["sample_rate"])
-        laser.setlidaropt(yd.LidarPropSingleChannel, False)
-        laser.setlidaropt(yd.LidarPropMaxAngle, 180.0)
-        laser.setlidaropt(yd.LidarPropMinAngle, -180.0)
-        laser.setlidaropt(yd.LidarPropMaxRange, cfg["max_range"])
-        laser.setlidaropt(yd.LidarPropMinRange, cfg["min_range"])
-        laser.setlidaropt(yd.LidarPropIntenstiy, False)
+        lidar = RPLidar(cfg["port"], baudrate=cfg["baud"])
+        
+        # Stop any existing motor movement
+        lidar.stop()
+        lidar.stop_motor()
+        time.sleep(0.5)
+        
+        # Start motor
+        lidar.start_motor()
+        time.sleep(0.5)
 
-        if not laser.initialize():
-            out_queue.put({"type": "error", "msg": "LiDAR initialize() failed"})
-            return
-
-        if not laser.turnOn():
-            out_queue.put({"type": "error", "msg": "LiDAR turnOn() failed"})
-            try:
-                laser.disconnecting()
-            except Exception:
-                pass
+        # Confirm health
+        health = lidar.get_health()
+        if health[0] != 'Good':
+            out_queue.put({"type": "error", "msg": f"LiDAR health bad: {health}"})
+            lidar.stop()
+            lidar.stop_motor()
+            lidar.disconnect()
             return
 
         out_queue.put({"type": "started"})
 
-        scan = yd.LaserScan()
-        while not stop_evt.is_set():
-            r = laser.doProcessSimple(scan)
-            if r and scan.points.size() > 5:
-                points = []
-                for pt in scan.points:
-                    d = pt.range
-                    if d <= 0.01:
-                        continue
-                    a = pt.angle
-                    points.append({
-                        "angle": round(math.degrees(a), 2),
-                        "distance": round(d, 4),
-                        "x": round(d * math.cos(a), 4),
-                        "y": round(d * math.sin(a), 4),
-                    })
-                # Non-blocking put — drop oldest frame if queue full
-                try:
-                    out_queue.put_nowait({
-                        "type": "scan",
-                        "timestamp": time.time(),
-                        "point_count": len(points),
-                        "points": points,
-                    })
-                except Exception:
-                    pass  # queue full, drop frame
-            time.sleep(0.02)
+        # iter_scans gives lists of (quality, angle, distance_mm)
+        for scan in lidar.iter_scans(max_buf_meas=500):
+            if stop_evt.is_set():
+                break
 
+            if len(scan) < 5:
+                continue
+
+            points = []
+            for _, angle, dist_mm in scan:
+                d = dist_mm / 1000.0  # Convert to metres
+                if d < cfg["min_range"] or d > cfg["max_range"]:
+                    continue
+                
+                # RPLidar angles are degrees, 0 is front
+                # We want 0 to be right (standard math polar) if needed, 
+                # but the app seems to expect degrees as-is from the sensor.
+                # LiDAR rotation is clockwise usually.
+                a_rad = math.radians(angle)
+                points.append({
+                    "angle": round(angle, 2),
+                    "distance": round(d, 4),
+                    "x": round(d * math.cos(a_rad), 4),
+                    "y": round(d * math.sin(a_rad), 4),
+                })
+
+            if not points:
+                continue
+
+            # Non-blocking put — drop oldest frame if queue full
+            try:
+                # Clear queue if it's lagging
+                while out_queue.full():
+                    try:
+                        out_queue.get_nowait()
+                    except:
+                        break
+                        
+                out_queue.put_nowait({
+                    "type": "scan",
+                    "timestamp": time.time(),
+                    "point_count": len(points),
+                    "points": points,
+                })
+            except Exception:
+                pass  # queue full, drop frame
+
+    except RPLidarException as e:
+        out_queue.put({"type": "error", "msg": f"RPLidar Error: {str(e)}"})
     except Exception as e:
         out_queue.put({"type": "error", "msg": str(e)})
     finally:
-        try:
-            laser.turnOff()
-            laser.disconnecting()
-        except Exception:
-            pass
+        if lidar:
+            try:
+                lidar.stop()
+                lidar.stop_motor()
+                lidar.disconnect()
+            except:
+                pass
 
 
 # ------------------------------------------------------------------
@@ -133,7 +135,7 @@ def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
 # ------------------------------------------------------------------
 
 class LidarScanner:
-    """Controls the YDLidar G2 via a child process and provides scan data."""
+    """Controls the RPLidar A1/A2 via a child process."""
 
     def __init__(self):
         self._process = None
@@ -144,30 +146,23 @@ class LidarScanner:
         self.latest_scan = None
         self._lock = threading.Lock()
 
-    # ------------------------------------------------------------------
-    # Lifecycle
-    # ------------------------------------------------------------------
-
     def start(self):
-        """Spawn the child process and start scanning. Returns True on success."""
+        """Spawn the child process and start scanning."""
         if not LIDAR_AVAILABLE:
-            print("⚠  LiDAR SDK not installed — cannot start")
+            print("⚠  rplidar library not installed — cannot start")
             return False
 
         if self.running:
             return True
 
-        self._queue = mp.Queue(maxsize=10)
+        self._queue = mp.Queue(maxsize=5)
         self._stop_evt = mp.Event()
 
         cfg = {
             "port": LIDAR_PORT,
             "baud": LIDAR_BAUDRATE,
-            "freq": LIDAR_SCAN_FREQUENCY,
-            "sample_rate": LIDAR_SAMPLE_RATE,
             "max_range": LIDAR_MAX_RANGE,
-            "min_range": LIDAR_MIN_RANGE,
-            "sdk_path": _sdk_build_path,
+            "min_range": 0.1,
         }
 
         self._process = mp.Process(target=_lidar_worker,
@@ -175,11 +170,11 @@ class LidarScanner:
                                    daemon=True)
         self._process.start()
 
-        # Wait for either "started" or "error"
+        # Wait for "started" or "error"
         try:
-            msg = self._queue.get(timeout=15)
+            msg = self._queue.get(timeout=10)
         except Exception:
-            msg = {"type": "error", "msg": "timeout waiting for LiDAR worker"}
+            msg = {"type": "error", "msg": "timeout waiting for RPLidar worker"}
 
         if msg.get("type") != "started":
             print(f"✗ LiDAR start failed: {msg.get('msg', 'unknown')}")
@@ -187,12 +182,11 @@ class LidarScanner:
             return False
 
         self.running = True
-        # Start background reader thread
         self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
         self._reader_thread.start()
 
         if VERBOSE_MODE:
-            print("✓ LiDAR scanning started (subprocess)")
+            print("✓ RPLidar scanning started (subprocess)")
         return True
 
     def stop(self):
@@ -201,35 +195,28 @@ class LidarScanner:
         if self._stop_evt:
             self._stop_evt.set()
         if self._reader_thread:
-            self._reader_thread.join(timeout=2)
+            self._reader_thread.join(timeout=1)
         self._cleanup_process()
         if VERBOSE_MODE:
-            print("✓ LiDAR scanning stopped")
+            print("✓ RPLidar scanning stopped")
 
     def disconnect(self):
-        """Fully disconnect from LiDAR."""
         self.stop()
 
     def _cleanup_process(self):
-        """Forcefully clean up the child process."""
         if self._process and self._process.is_alive():
             self._process.terminate()
-            self._process.join(timeout=3)
+            self._process.join(timeout=2)
             if self._process.is_alive():
                 self._process.kill()
         self._process = None
         self._queue = None
         self._stop_evt = None
 
-    # ------------------------------------------------------------------
-    # Reader thread (runs in main process)
-    # ------------------------------------------------------------------
-
     def _reader_loop(self):
-        """Drain frames from the child process queue into latest_scan."""
         while self.running:
             try:
-                msg = self._queue.get(timeout=0.5)
+                msg = self._queue.get(timeout=1.0)
                 if msg["type"] == "scan":
                     with self._lock:
                         self.latest_scan = msg
@@ -238,18 +225,11 @@ class LidarScanner:
                     self.running = False
                     break
             except Exception:
-                # Queue.get timeout — check if process is still alive
                 if self._process and not self._process.is_alive():
-                    print("⚠ LiDAR worker process died")
                     self.running = False
                     break
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     def get_latest_scan(self):
-        """Return the most recent scan data dict (or None)."""
         with self._lock:
             return self.latest_scan
 

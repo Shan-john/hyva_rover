@@ -32,7 +32,7 @@ api_key = _os_env.environ.get("GROQ_API_KEY", "")  # Set GROQ_API_KEY environmen
 # YDLidar G2 Configuration
 # ================================
 LIDAR_PORT = "/dev/ttyUSB0"       # Serial port (run: ls /dev/ttyUSB*)
-LIDAR_BAUDRATE = 230400           # G2/G2B baud rate
+LIDAR_BAUDRATE = 115200           # RPLidar A1/A2 baud rate (115200 for A1, 230400 for G2)
 LIDAR_SCAN_FREQUENCY = 10.0      # Scan frequency in Hz
 LIDAR_SAMPLE_RATE = 5             # Sample rate in kHz
 LIDAR_MAX_RANGE = 12.0            # Max detection range (metres)
