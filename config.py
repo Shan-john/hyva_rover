@@ -29,7 +29,7 @@ import os as _os_env
 api_key = _os_env.environ.get("GROQ_API_KEY", "")  # Set GROQ_API_KEY environment variable
 
 # ================================
-# YDLidar G2 Configuration
+# RPLidar A1 Configuration
 # ================================
 LIDAR_PORT = "/dev/ttyUSB0"       # Serial port (run: ls /dev/ttyUSB*)
 LIDAR_BAUDRATE = 115200           # RPLidar A1/A2 baud rate (115200 for A1, 230400 for G2)
