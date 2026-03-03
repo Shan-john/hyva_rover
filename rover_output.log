@@ -1,0 +1,42 @@
+nohup: ignoring input
+🛑 Stopping any existing services...
+🚀 Starting Backend Server (with sudo for GPIO)...
+Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
+
+Initializing L298N Dual Motor Driver (gpiod on /dev/gpiochip4):
+  Motor A: IN1=27, IN2=17, ENA=22
+  Motor B: IN3=23, IN4=24, ENB=25
+✓ Both motors initialized
+✓ Motors initialized
+✓ LiDAR modules loaded
+
+============================================================
+MOTOR CONTROL SERVER + LiDAR + Exploration
+============================================================
+  Mode:    REAL GPIO
+  LiDAR:   AVAILABLE
+  Address: http://0.0.0.0:5000
+============================================================
+
+ * Serving Flask app 'server'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.187.96.200:5000
+[33mPress CTRL+C to quit[0m
+🌐 Starting Frontend Dev Server...
+
+> car-joystick-controller@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 249 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://10.187.96.200:3000/
+127.0.0.1 - - [03/Mar/2026 15:15:42] "GET /socket.io/?EIO=4&transport=polling&t=f9z1s4a8 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:15:42] "POST /socket.io/?EIO=4&transport=polling&t=f9z2jzb0&sid=N8qJ_Rud319bsdzPAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:15:42] "GET /socket.io/?EIO=4&transport=polling&t=f9z2k8ra&sid=N8qJ_Rud319bsdzPAAAA HTTP/1.1" 200 -
+./start_rover.sh: line 22:  4475 Killed                  sudo ./venv/bin/python server.py  (wd: ~/Downloads/prccar/carprc)
+./start_rover.sh: line 22:  4492 Killed                  npm run dev

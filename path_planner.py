@@ -151,9 +151,9 @@ class PathPlanner:
         if action == "forward":
             return (0, speed)
         elif action == "turn_left":
-            return (steering, int(speed * 0.5))
+            return (-abs(steering), int(speed * 0.6))   # x < 0 → left in apply_joystick
         elif action == "turn_right":
-            return (steering, int(speed * 0.5))
+            return (abs(steering), int(speed * 0.6))    # x > 0 → right in apply_joystick
         else:  # stop
             return (0, 0)
 

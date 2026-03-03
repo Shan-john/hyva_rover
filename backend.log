@@ -1,0 +1,60 @@
+
+Initializing L298N Dual Motor Driver (gpiod on /dev/gpiochip4):
+  Motor A: IN1=27, IN2=17, ENA=22
+  Motor B: IN3=23, IN4=24, ENB=25
+✓ Both motors initialized
+✓ Motors initialized
+✓ LiDAR modules loaded
+
+============================================================
+MOTOR CONTROL SERVER + LiDAR + Exploration
+============================================================
+  Mode:    REAL GPIO
+  LiDAR:   AVAILABLE
+  Address: http://0.0.0.0:5000
+============================================================
+
+ * Serving Flask app 'server'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.187.96.200:5000
+[33mPress CTRL+C to quit[0m
+
+Initializing L298N Dual Motor Driver (gpiod on /dev/gpiochip4):
+  Motor A: IN1=27, IN2=17, ENA=22
+  Motor B: IN3=23, IN4=24, ENB=25
+✓ Both motors initialized
+✓ Motors initialized
+✓ LiDAR modules loaded
+
+============================================================
+MOTOR CONTROL SERVER + LiDAR + Exploration
+============================================================
+  Mode:    REAL GPIO
+  LiDAR:   AVAILABLE
+  Address: http://0.0.0.0:5000
+============================================================
+
+ * Serving Flask app 'server'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.187.96.200:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [03/Mar/2026 15:55:34] "GET /api/lidar/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:03:46] "GET /api/lidar/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:02] "GET /socket.io/?transport=polling&EIO=4&t=1772534101.455136 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:02] "POST /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:02] "GET /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA&t=1772534102.3332703 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:02] "POST /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:02] "GET /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA&t=1772534102.3397813 HTTP/1.1" 200 -
+🔌 Client connected
+🗺️  Start mapping requested
+🗺️  Mapping loop started
+127.0.0.1 - - [03/Mar/2026 16:05:06] "GET /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA&t=1772534102.3614664 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:06] "GET /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA&t=1772534106.7006638 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:07] "GET /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA&t=1772534106.8582408 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 16:05:07] "POST /socket.io/?transport=polling&EIO=4&sid=dI662v2Ghmn1W2NtAAAA HTTP/1.1" 200 -

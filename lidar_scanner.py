@@ -47,18 +47,37 @@ def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
 
     lidar = None
     try:
-        lidar = RPLidar(cfg["port"], baudrate=cfg["baud"])
-        
-        # Stop any existing motor movement
-        lidar.stop()
-        lidar.stop_motor()
-        time.sleep(0.5)
-        
-        # Start motor
-        lidar.start_motor()
+        lidar = RPLidar(cfg["port"], baudrate=cfg["baud"], timeout=3)
+
+        # Robust startup sequence:
+        # 1. Stop any active scan/motor first
+        try:
+            lidar.stop()
+            lidar.stop_motor()
+        except Exception:
+            pass
         time.sleep(0.5)
 
-        # Confirm health
+        # 2. Clear serial buffer of any leftover bytes
+        try:
+            lidar._serial.reset_input_buffer()
+            lidar._serial.reset_output_buffer()
+        except Exception:
+            pass
+        time.sleep(0.3)
+
+        # 3. Start motor and wait for spin-up
+        lidar.start_motor()
+        time.sleep(2)  # Give motor adequate time to reach full speed
+
+        # 4. Clear buffer again after motor start vibration settles garbage
+        try:
+            lidar._serial.reset_input_buffer()
+        except Exception:
+            pass
+        time.sleep(0.3)
+
+        # 5. Confirm health
         health = lidar.get_health()
         if health[0] != 'Good':
             out_queue.put({"type": "error", "msg": f"LiDAR health bad: {health}"})
@@ -69,52 +88,82 @@ def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
 
         out_queue.put({"type": "started"})
 
-        # iter_scans gives lists of (quality, angle, distance_mm)
-        for scan in lidar.iter_scans(max_buf_meas=500):
-            if stop_evt.is_set():
-                break
+        scan_error_count = 0
+        MAX_CONSECUTIVE_ERRORS = 5
 
-            if len(scan) < 5:
-                continue
-
-            points = []
-            for _, angle, dist_mm in scan:
-                d = dist_mm / 1000.0  # Convert to metres
-                if d < cfg["min_range"] or d > cfg["max_range"]:
-                    continue
-                
-                # RPLidar angles are degrees, 0 is front
-                # We want 0 to be right (standard math polar) if needed, 
-                # but the app seems to expect degrees as-is from the sensor.
-                # LiDAR rotation is clockwise usually.
-                a_rad = math.radians(angle)
-                points.append({
-                    "angle": round(angle, 2),
-                    "distance": round(d, 4),
-                    "x": round(d * math.cos(a_rad), 4),
-                    "y": round(d * math.sin(a_rad), 4),
-                })
-
-            if not points:
-                continue
-
-            # Non-blocking put — drop oldest frame if queue full
+        while not stop_evt.is_set():
             try:
-                # Clear queue if it's lagging
-                while out_queue.full():
-                    try:
-                        out_queue.get_nowait()
-                    except:
+                # iter_scans gives lists of (quality, angle, distance_mm)
+                for scan in lidar.iter_scans(max_buf_meas=500):
+                    if stop_evt.is_set():
                         break
-                        
-                out_queue.put_nowait({
-                    "type": "scan",
-                    "timestamp": time.time(),
-                    "point_count": len(points),
-                    "points": points,
-                })
-            except Exception:
-                pass  # queue full, drop frame
+
+                    # Reset error counter on a successful scan
+                    scan_error_count = 0
+
+                    if len(scan) < 5:
+                        continue
+
+                    points = []
+                    for _, angle, dist_mm in scan:
+                        d = dist_mm / 1000.0  # Convert to metres
+                        if d < cfg["min_range"] or d > cfg["max_range"]:
+                            continue
+
+                        a_rad = math.radians(angle)
+                        points.append({
+                            "angle": round(angle, 2),
+                            "distance": round(d, 4),
+                            "x": round(d * math.cos(a_rad), 4),
+                            "y": round(d * math.sin(a_rad), 4),
+                        })
+
+                    if not points:
+                        continue
+
+                    # Non-blocking put — drop oldest frame if queue full
+                    try:
+                        while out_queue.full():
+                            try:
+                                out_queue.get_nowait()
+                            except Exception:
+                                break
+
+                        out_queue.put_nowait({
+                            "type": "scan",
+                            "timestamp": time.time(),
+                            "point_count": len(points),
+                            "points": points,
+                        })
+                    except Exception:
+                        pass  # queue full, drop frame
+
+            except RPLidarException as e:
+                scan_error_count += 1
+                err_msg = str(e)
+                print(f"⚠ LiDAR scan error (#{scan_error_count}): {err_msg}")
+
+                if scan_error_count >= MAX_CONSECUTIVE_ERRORS:
+                    out_queue.put({"type": "error", "msg": f"Too many consecutive scan errors: {err_msg}"})
+                    break
+
+                # Attempt re-sync: stop scan, clear buffer, restart scan
+                try:
+                    lidar.stop()
+                    time.sleep(0.3)
+                    try:
+                        lidar._serial.reset_input_buffer()
+                    except Exception:
+                        pass
+                    time.sleep(0.3)
+                    # Continue outer while loop to restart iter_scans
+                except Exception as re:
+                    out_queue.put({"type": "error", "msg": f"Re-sync failed: {re}"})
+                    break
+
+            except Exception as e:
+                out_queue.put({"type": "error", "msg": str(e)})
+                break
 
     except RPLidarException as e:
         out_queue.put({"type": "error", "msg": f"RPLidar Error: {str(e)}"})
@@ -126,7 +175,7 @@ def _lidar_worker(out_queue: mp.Queue, stop_evt: mp.Event, cfg: dict):
                 lidar.stop()
                 lidar.stop_motor()
                 lidar.disconnect()
-            except:
+            except Exception:
                 pass
 
 
@@ -162,7 +211,7 @@ class LidarScanner:
             "port": LIDAR_PORT,
             "baud": LIDAR_BAUDRATE,
             "max_range": LIDAR_MAX_RANGE,
-            "min_range": 0.1,
+            "min_range": LIDAR_MIN_RANGE,
         }
 
         self._process = mp.Process(target=_lidar_worker,
@@ -170,9 +219,9 @@ class LidarScanner:
                                    daemon=True)
         self._process.start()
 
-        # Wait for "started" or "error"
+        # Wait for "started" or "error" — give it more time due to motor spin-up
         try:
-            msg = self._queue.get(timeout=10)
+            msg = self._queue.get(timeout=15)
         except Exception:
             msg = {"type": "error", "msg": "timeout waiting for RPLidar worker"}
 
@@ -195,7 +244,7 @@ class LidarScanner:
         if self._stop_evt:
             self._stop_evt.set()
         if self._reader_thread:
-            self._reader_thread.join(timeout=1)
+            self._reader_thread.join(timeout=2)
         self._cleanup_process()
         if VERBOSE_MODE:
             print("✓ RPLidar scanning stopped")
@@ -206,7 +255,7 @@ class LidarScanner:
     def _cleanup_process(self):
         if self._process and self._process.is_alive():
             self._process.terminate()
-            self._process.join(timeout=2)
+            self._process.join(timeout=3)
             if self._process.is_alive():
                 self._process.kill()
         self._process = None

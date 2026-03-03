@@ -193,48 +193,21 @@ body {
   transition: all 0.3s ease;
 }
 
-.motor-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: var(--shadow-glow);
-}
-
-.motor-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.motor-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-secondary);
-}
-
-.motor-card.motor-a .motor-label {
-  color: var(--motor-a-color);
-}
-
-.motor-card.motor-b .motor-label {
-  color: var(--motor-b-color);
-}
-
-.motor-direction-badge {
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(100, 116, 139, 0.15);
-  color: var(--text-muted);
+.motor-card.pivot-mode {
+  border-color: var(--accent-orange);
+  background: rgba(245, 158, 11, 0.05);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
 }
 
 .motor-direction-badge.forward {
   background: rgba(16, 185, 129, 0.12);
   color: var(--accent-green);
+}
+
+.motor-direction-badge.pivot {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--accent-orange);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .motor-direction-badge.backward {

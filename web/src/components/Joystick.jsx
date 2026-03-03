@@ -135,9 +135,15 @@ export default function Joystick({ size = 220, onMove, onRelease }) {
         if (now - lastEmit.current < 66) return // ~15 fps throttle
         lastEmit.current = now
 
-        // User requested 180-degree rotation ("upside down")
-        const xPct = Math.round((-knobPos.current.x / baseRadius) * 100)
-        const yPct = Math.round((knobPos.current.y / baseRadius) * 100) // was -knobPos.y
+        // Raw knob position as percentages
+        const rawX = Math.round((knobPos.current.x / baseRadius) * 100)
+        const rawY = Math.round((knobPos.current.y / baseRadius) * 100)
+
+        // Correct coordinate mapping: 
+        // Forward (UP) should be positive Y, Backward (DOWN) should be negative Y
+        // Right should be positive X, Left should be negative X
+        const xPct = rawX
+        const yPct = -rawY
 
         const x = Math.abs(xPct) < DEAD_ZONE ? 0 : xPct
         const y = Math.abs(yPct) < DEAD_ZONE ? 0 : yPct
@@ -242,8 +248,8 @@ export default function Joystick({ size = 220, onMove, onRelease }) {
         }
     }, [handleMove, handleEnd])
 
-    const xPct = Math.round((-knobPos.current.x / baseRadius) * 100)
-    const yPct = Math.round((knobPos.current.y / baseRadius) * 100)
+    const xPct = Math.round((knobPos.current.x / baseRadius) * 100)
+    const yPct = Math.round((-knobPos.current.y / baseRadius) * 100)
 
     return (
         <div className="joystick-section">

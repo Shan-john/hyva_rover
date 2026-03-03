@@ -5,14 +5,14 @@ Edit these values to match YOUR actual hardware setup
 
 # GPIO Pin Configuration - MOTOR A
 # ================================
-GPIO_IN1_PIN = 17      # Motor A direction control pin 1 (Forward/Backward)
-GPIO_IN2_PIN = 27      # Motor A direction control pin 2 (Forward/Backward)
+GPIO_IN1_PIN = 27      # Motor A direction control pin 1 (Swapped from 17)
+GPIO_IN2_PIN = 17      # Motor A direction control pin 2 (Swapped from 27)
 GPIO_ENA_PIN = 22      # Motor A PWM speed control pin (0-100%)
 
 # GPIO Pin Configuration - MOTOR B
 # ================================
 GPIO_IN3_PIN = 23      # Motor B direction control pin 1 (Forward/Backward)
-GPIO_IN4_PIN = 24      # Motor B direction control pin 2 (Forward/Backward)
+GPIO_IN4_PIN = 24                                      # Motor B direction control pin 2 (Forward/Backward)
 GPIO_ENB_PIN = 25      # Motor B PWM speed control pin (0-100%)
 
 # PWM Configuration
@@ -41,7 +41,7 @@ LIDAR_MIN_RANGE = 0.1             # Min detection range (metres)
 # ================================
 # Autonomous Navigation
 # ================================
-NAV_SPEED = 50                    # Driving speed during navigation (0-100%)
+NAV_SPEED = 25                    # Driving speed during navigation (0-100%)
 NAV_OBSTACLE_THRESHOLD = 0.35    # Distance to obstacle that triggers avoidance (metres)
 NAV_SECTOR_COUNT = 12             # Number of angular sectors for path planning
 NAV_FRONT_SECTOR_HALF = 2        # How many sectors left/right of centre count as "front"
@@ -61,7 +61,7 @@ DR_MAX_SPEED_MPS = 0.3            # Max forward speed in m/s at 100% PWM (calibr
 # ================================
 # Exploration
 # ================================
-EXPLORE_SPEED = 40                # PWM% during autonomous exploration
+EXPLORE_SPEED = 20                # PWM% during autonomous exploration
 EXPLORE_TURN_DURATION = 0.8       # Seconds per 90° turn (calibrate!)
 EXPLORE_COMPLETE_PCT = 90         # Consider mapping done at this % explored
 EXPLORE_FRONTIER_MIN_DIST = 0.20  # Ignore frontiers closer than this (metres)

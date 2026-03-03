@@ -230,11 +230,13 @@ export default function App() {
         ctx.fillStyle = '#6366f1'
         ctx.fill()
 
-    }, [mapPoints, navStatus, gridData, pathData])
+    }, [mapPoints, navStatus, gridData, pathData, activeTab])
 
     const getDirection = useCallback((x, y) => {
         if (Math.abs(x) < 10 && Math.abs(y) < 10) return 'IDLE'
-        const angle = Math.atan2(-y, x) * (180 / Math.PI)
+        // Standard atan2(y, x) returns angle in radians from -pi to pi
+        const angle = Math.atan2(y, x) * (180 / Math.PI)
+
         if (angle > -22.5 && angle <= 22.5) return 'RIGHT'
         if (angle > 22.5 && angle <= 67.5) return 'FORWARD-RIGHT'
         if (angle > 67.5 && angle <= 112.5) return 'FORWARD'
@@ -435,29 +437,28 @@ export default function App() {
                                 <button
                                     className={`side-btn btn-explore ${lidarState.exploring ? 'active' : ''}`}
                                     onClick={toggleExploration}
-                                    disabled={lidarState.mapping || lidarState.navigating}
+                                    disabled={lidarState.navigating}
                                     id="explore-room-btn"
                                 >
                                     <span className="side-btn-icon">🔍</span>
                                     <span className="side-btn-label">{lidarState.exploring ? 'Stop' : 'Explore'}</span>
                                 </button>
                                 <button
-                                    className={`side-btn btn-map ${lidarState.mapping ? 'active' : ''}`}
-                                    onClick={toggleMapping}
-                                    disabled={lidarState.exploring || lidarState.navigating}
-                                    id="map-surroundings-btn"
-                                >
-                                    <span className="side-btn-icon">🗺️</span>
-                                    <span className="side-btn-label">{lidarState.mapping ? 'Stop' : 'Map'}</span>
-                                </button>
-                                <button
                                     className={`side-btn btn-nav ${lidarState.navigating ? 'active' : ''}`}
                                     onClick={toggleNavigation}
-                                    disabled={lidarState.exploring || lidarState.mapping}
+                                    disabled={lidarState.exploring}
                                     id="run-path-btn"
                                 >
                                     <span className="side-btn-icon">🚗</span>
                                     <span className="side-btn-label">{lidarState.navigating ? 'Stop' : 'Navigate'}</span>
+                                </button>
+                                <button
+                                    className="side-btn btn-save"
+                                    onClick={handleSaveMap}
+                                    disabled={!isAnyActive && mapPoints.length === 0}
+                                >
+                                    <span className="side-btn-icon">💾</span>
+                                    <span className="side-btn-label">Save Map</span>
                                 </button>
                             </div>
 
@@ -524,41 +525,23 @@ export default function App() {
                                     <span className="side-btn-label">Home</span>
                                 </button>
                                 <button
-                                    className="side-btn btn-save"
-                                    onClick={handleSaveMap}
-                                    disabled={!isAnyActive && mapPoints.length === 0}
-                                >
-                                    <span className="side-btn-icon">💾</span>
-                                    <span className="side-btn-label">Save</span>
-                                </button>
-                                <button
                                     className="side-btn btn-maps"
                                     onClick={() => setShowMapPanel(!showMapPanel)}
                                 >
                                     <span className="side-btn-icon">📂</span>
                                     <span className="side-btn-label">Maps</span>
                                 </button>
+                                <button
+                                    id="lidar-stop-btn"
+                                    className="side-btn btn-stop"
+                                    onClick={handleEmergencyStop}
+                                >
+                                    <span className="side-btn-icon">⛔</span>
+                                    <span className="side-btn-label">STOP</span>
+                                </button>
                             </div>
                         </div>
 
-                        {/* Exploration Mode Selector (below the cockpit) */}
-                        <div className="mode-selector">
-                            {[
-                                { id: 'explore', label: '🔍 Explore', tip: 'Auto-discover' },
-                                { id: 'coverage', label: '📐 Coverage', tip: 'Grid sweep' },
-                                { id: 'boundary', label: '🔲 Boundary', tip: 'Follow walls' },
-                                { id: 'corners', label: '📌 Corners', tip: 'Visit corners' },
-                            ].map(m => (
-                                <button
-                                    key={m.id}
-                                    className={`mode-btn ${exploreMode === m.id ? 'active' : ''}`}
-                                    onClick={() => handleModeChange(m.id)}
-                                    title={m.tip}
-                                >
-                                    {m.label}
-                                </button>
-                            ))}
-                        </div>
 
                         {/* Map Management Panel (collapsible) */}
                         {showMapPanel && (
